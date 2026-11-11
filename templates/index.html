@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>CINTAC - Cotizador Logístico Marítimo COMEX</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --cintac-terracota: #A8381D; --cintac-terracota-dark: #872B14; --cintac-orange: #E65A1E;
+      --cintac-orange-soft: #FFF2EB; --cintac-orange-glow: rgba(230, 90, 30, 0.15);
+      --slate-900: #0F172A; --slate-800: #1E293B; --slate-700: #334155; --slate-600: #475569;
+      --slate-500: #64748B; --slate-300: #CBD5E1; --slate-200: #E2E8F0; --slate-100: #F1F5F9;
+      --slate-50:  #F8FAFC; --alert-bg: #FFFBEB; --alert-border: #F59E0B; --alert-text: #92400E;
+      --success-bg: #ECFDF5; --success-border: #10B981; --success-text: #065F46;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-card: 0 4px 16px -2px rgba(15, 23, 42, 0.06), 0 1px 3px -1px rgba(15, 23, 42, 0.04);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background-color: var(--slate-100); color: var(--slate-800); min-height: 100vh; display: flex; flex-direction: column; }
+    header { background-color: #FFFFFF; border-bottom: 1px solid var(--slate-200); box-shadow: var(--shadow-sm); position: sticky; top: 0; z-index: 50; }
+    .header-inner { max-width: 1360px; margin: 0 auto; padding: 0.85rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    .brand-cluster { display: flex; align-items: center; gap: 1.25rem; }
+    .brand-logo-box { background: linear-gradient(135deg, var(--cintac-terracota), var(--cintac-orange)); color: #FFFFFF; font-weight: 800; font-size: 1.35rem; padding: 0.45rem 1rem; border-radius: 6px; }
+    .brand-meta { border-left: 1px solid var(--slate-200); padding-left: 1.25rem; }
+    .brand-name { font-size: 1.05rem; font-weight: 700; color: var(--slate-900); }
+    .brand-sub { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--slate-500); }
+    .tab-pills { display: flex; gap: 0.35rem; background: var(--slate-100); padding: 0.35rem; border-radius: 8px; border: 1px solid var(--slate-200); }
+    .tab-pill { background: transparent; border: none; padding: 0.65rem 1.4rem; font-size: 0.88rem; font-weight: 600; color: var(--slate-600); cursor: pointer; border-radius: 6px; }
+    .tab-pill.active { background-color: #FFFFFF; color: var(--cintac-terracota); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); }
+    main { flex: 1; max-width: 1360px; width: 100%; margin: 2.2rem auto; padding: 0 2rem; }
+    .tab-view { display: none; }
+    .tab-view.active { display: block; }
+    .dashboard-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 2rem; align-items: start; }
+    .admin-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 2rem; align-items: start; }
+    .panel { background: #FFFFFF; border: 1px solid var(--slate-200); border-radius: 10px; padding: 2.2rem; box-shadow: var(--shadow-card); }
+    .panel-header { margin-bottom: 1.6rem; border-bottom: 1px solid var(--slate-100); padding-bottom: 1rem; }
+    .panel-title { font-size: 1.25rem; font-weight: 800; color: var(--slate-900); }
+    .panel-desc { font-size: 0.86rem; color: var(--slate-500); margin-top: 0.25rem; }
+    .form-group { margin-bottom: 1.3rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+    label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--slate-700); text-transform: uppercase; margin-bottom: 0.42rem; }
+    select, input[type="number"], input[type="text"], input[type="email"], input[type="password"] {
+      width: 100%; height: 46px; padding: 0 0.95rem; background: #FFFFFF; border: 1.5px solid var(--slate-200);
+      border-radius: 6px; font-size: 0.93rem; font-weight: 500; color: var(--slate-800);
+    }
+    .btn-cta { width: 100%; height: 50px; background: linear-gradient(135deg, var(--cintac-terracota), var(--cintac-orange)); color: #FFFFFF; border: none; border-radius: 6px; font-weight: 800; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s; }
+    .btn-cta:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-secondary { width: 100%; height: 46px; background: #FFFFFF; color: var(--cintac-terracota); border: 2px solid var(--cintac-terracota); border-radius: 6px; font-weight: 700; text-transform: uppercase; cursor: pointer; margin-top: 1.3rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+    .results-deck { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 1rem; margin-bottom: 0.5rem; }
+    .metric-card { background: var(--slate-50); border: 1px solid var(--slate-200); border-left: 5px solid var(--cintac-terracota); border-radius: 6px; padding: 1.1rem 1.25rem; }
+    .metric-card.accent { border-left-color: var(--cintac-orange); }
+    .metric-label { font-size: 0.73rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500); }
+    .metric-value { font-size: 1.6rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--slate-900); margin-top: 0.2rem; }
+    .metric-sub { font-size: 0.82rem; font-weight: 700; color: var(--cintac-terracota); margin-top: 0.25rem; }
+    .breakdown-table { margin-top: 0.8rem; border-top: 1px solid var(--slate-200); }
+    .breakdown-row { display: flex; justify-content: space-between; padding: 0.62rem 0; border-bottom: 1px solid var(--slate-100); font-size: 0.88rem; gap: 1rem; }
+    .breakdown-row .label-col { color: var(--slate-500); font-weight: 500; }
+    .breakdown-row .val-col { font-weight: 700; color: var(--slate-800); text-align: right; }
+    .alert-romana { background-color: var(--alert-bg); border: 1.5px solid var(--alert-border); border-radius: 6px; padding: 1.1rem; margin-top: 1.2rem; }
+    .alert-romana-head { font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: var(--alert-text); margin-bottom: 0.3rem; }
+    .alert-romana-body { font-size: 0.86rem; color: var(--alert-text); line-height: 1.45; font-weight: 500; }
+    .dropzone-box { border: 2px dashed var(--slate-300); border-radius: 8px; background: var(--slate-50); padding: 2.6rem 1.5rem; text-align: center; cursor: pointer; }
+    .dropzone-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .dropzone-specs { font-size: 0.82rem; color: var(--slate-500); margin-bottom: 1.2rem; }
+    .btn-browse { background: #FFFFFF; border: 1.5px solid var(--cintac-terracota); color: var(--cintac-terracota); padding: 0.6rem 1.4rem; font-weight: 700; text-transform: uppercase; border-radius: 4px; cursor: pointer; }
+    .success-alert { background-color: var(--success-bg); border: 1.5px solid var(--success-border); border-radius: 6px; padding: 1.1rem 1.3rem; margin-top: 1.2rem; }
+    .success-alert-title { font-size: 0.92rem; font-weight: 800; color: var(--success-text); margin-bottom: 0.2rem; }
+    .success-alert-desc { font-size: 0.86rem; color: var(--success-text); line-height: 1.4; }
+
+    #pesoCarga::-webkit-outer-spin-button, #pesoCarga::-webkit-inner-spin-button,
+    #valorCarga::-webkit-outer-spin-button, #valorCarga::-webkit-inner-spin-button {
+      -webkit-appearance: none; margin: 0;
+    }
+    #pesoCarga, #valorCarga { -moz-appearance: textfield; }
+
+    .visualizer-box {
+      background: var(--slate-50); border: 1.5px solid var(--slate-200); border-radius: 8px;
+      padding: 0.95rem 1.15rem; margin-bottom: 1.3rem;
+    }
+    .visualizer-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.55rem; }
+    .visualizer-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--slate-700); }
+    .badge-romana {
+      font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 4px;
+      background: var(--cintac-orange-soft); color: var(--cintac-terracota); border: 1px solid var(--cintac-orange);
+    }
+    .bar-frame {
+      position: relative; height: 26px; background: #E2E8F0; border-radius: 6px;
+      overflow: hidden; border: 1px solid var(--slate-300);
+    }
+    .cargo-fill-bar {
+      height: 100%; background: linear-gradient(90deg, var(--cintac-terracota), var(--cintac-orange));
+      transition: width 0.25s ease; width: 0%;
+    }
+    .visualizer-legend {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 0.55rem; font-size: 0.78rem; font-weight: 600; color: var(--slate-600);
+    }
+
+    .users-table { width: 100%; border-collapse: collapse; margin-top: 1.2rem; font-size: 0.83rem; }
+    .users-table th { text-align: left; padding: 0.6rem; background: var(--slate-100); color: var(--slate-700); text-transform: uppercase; font-size: 0.71rem; border-bottom: 1.5px solid var(--slate-200); }
+    .users-table td { padding: 0.6rem; border-bottom: 1px solid var(--slate-100); color: var(--slate-800); vertical-align: middle; }
+    .role-badge { padding: 0.2rem 0.55rem; border-radius: 4px; font-weight: 700; font-size: 0.71rem; }
+    .role-admin { background: #FEE2E2; color: #991B1B; }
+    .role-empleado { background: #DBEAFE; color: #1E40AF; }
+    .btn-delete-user {
+      background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;
+      padding: 0.28rem 0.65rem; border-radius: 4px; font-size: 0.73rem;
+      font-weight: 700; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-delete-user:hover { background: #DC2626; color: #FFFFFF; }
+    .protected-tag { color: var(--slate-500); font-size: 0.73rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="brand-cluster">
+        <div class="brand-logo-box">CINTAC</div>
+        <div class="brand-meta">
+          <div class="brand-name">Cotizador Logístico Marítimo</div>
+          <div class="brand-sub">División Comercio Exterior (COMEX) — Dólar: ${{ tasa_dolar }} CLP</div>
+        </div>
+      </div>
+      <nav class="tab-pills" style="align-items: center;">
+        <button class="tab-pill {% if tab_activa == 'cotizador-view' or not tab_activa %}active{% endif %}" onclick="cambiarPestana('cotizador-view', this)">Cotizador de Fletes</button>
+        
+        {% if es_admin %}
+        <button class="tab-pill {% if tab_activa == 'admin-view' %}active{% endif %}" onclick="cambiarPestana('admin-view', this)">Administración y Tarifas</button>
+        {% endif %}
+
+        {% if session.get('correo') %}
+        <a href="/logout" class="tab-pill" style="color: #DC2626; border: 1px solid #FECACA; background-color: #FEF2F2; text-decoration: none; margin-left: 12px; padding: 0.5rem 1rem;">
+          Cerrar Sesión ({{ session.get('correo', '').split('@')[0] }})
+        </a>
+        {% else %}
+        <a href="/login" class="tab-pill" style="text-decoration: none; margin-left: 12px; padding: 0.5rem 1rem;">
+          Acceso Funcionarios
+        </a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- VISTA 1: COTIZADOR COMEX -->
+    <section id="cotizador-view" class="tab-view {% if tab_activa == 'cotizador-view' or not tab_activa %}active{% endif %}">
+      <div class="dashboard-grid">
+        
+        <div class="panel">
+          <div class="panel-header">
+            <h1 class="panel-title">Parámetros de Cotización</h1>
+            <p class="panel-desc">Seleccione la ruta marítima, el tipo de contenedor (20' o 40' High Cube) y el peso de su mercadería.</p>
+          </div>
+          
+          {% if error_cotizacion %}
+          <div class="alert-romana" style="margin-top: 0; margin-bottom: 1.4rem;">
+            <div class="alert-romana-head">Atención: Revise los datos ingresados</div>
+            <div class="alert-romana-body">{{ error_cotizacion }}</div>
+          </div>
+          {% endif %}
+
+          <form method="POST" action="{{ '/panel_interno' if session.get('rol') else '/' }}" novalidate>
+            
+            <div class="form-group">
+              <label>Tipo de Operación</label>
+              <div class="tab-pills" style="width: fit-content; margin-bottom: 0;">
+                <button type="button" class="tab-pill {% if request.form.get('tipoOperacion', 'Importación') == 'Importación' %}active{% endif %}" id="btn-importacion" onclick="setOperacion('Importación')">Importación</button>
+                <button type="button" class="tab-pill {% if request.form.get('tipoOperacion') == 'Exportación' %}active{% endif %}" id="btn-exportacion" onclick="setOperacion('Exportación')">Exportación</button>
+              </div>
+              <input type="hidden" name="tipoOperacion" id="tipoOperacion" value="{{ request.form.get('tipoOperacion', 'Importación') }}">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Puerto de Origen</label>
+                <select name="puertoOrigen" id="puertoOrigen" onchange="actualizarDestinosSegunOrigen(false)" required></select>
+              </div>
+              <div class="form-group">
+                <label>Puerto de Destino</label>
+                <select name="puertoDestino" id="puertoDestino" required></select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Tipo de Contenedor</label>
+                <select name="tipoEquipo" id="tipoEquipo" onchange="actualizarIndicadorRomana()" required>
+                  <option value="20 HC" {% if request.form.get('tipoEquipo') == '20 HC' %}selected{% endif %}>Contenedor 20' HC (Máx. 23 Ton)</option>
+                  <option value="40 HC" {% if request.form.get('tipoEquipo', '40 HC') == '40 HC' %}selected{% endif %}>Contenedor 40' HC (Máx. 25 Ton)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Peso Total de la Carga</label>
+                <div style="display: grid; grid-template-columns: 1.8fr 1fr; gap: 0.6rem;">
+                  <input type="number" name="pesoCarga" id="pesoCarga" step="0.01" value="{{ request.form.get('pesoCarga', '') }}" placeholder="Ej. 50" oninput="actualizarIndicadorRomana()" required>
+                  <select name="unidadPeso" id="unidadPeso" onchange="actualizarIndicadorRomana()">
+                    <option value="TON" {% if request.form.get('unidadPeso', 'TON') == 'TON' %}selected{% endif %}>Ton (t)</option>
+                    <option value="KG" {% if request.form.get('unidadPeso') == 'KG' %}selected{% endif %}>Kg</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- VALOR DE LA CARGA OPCIONAL -->
+            <div class="form-group">
+              <label>Valor de la Mercadería en USD <span style="color:var(--slate-500);font-weight:normal;">(Opcional — Si lo ingresa, se sumará al costo del flete)</span></label>
+              <input type="number" name="valorCarga" id="valorCarga" step="0.01" value="{{ request.form.get('valorCarga', '') }}" placeholder="Opcional: Ej. 15000 (Dejar en blanco para cotizar solo flete)">
+            </div>
+
+            <!-- PREVISUALIZACIÓN DE OCUPACIÓN POR NORMATIVA DE ROMANA -->
+            <div class="visualizer-box">
+              <div class="visualizer-top">
+                <span class="visualizer-title">Estimación de Unidades según Peso Vial (Romana)</span>
+                <span class="badge-romana" id="badgeTope">Capacidad Legal: 25 Ton / Contenedor</span>
+              </div>
+              <div class="bar-frame">
+                <div class="cargo-fill-bar" id="cargoFillBar"></div>
+              </div>
+              <div class="visualizer-legend">
+                <span id="leyendaPeso">Peso ingresado: 0.00 Ton</span>
+                <span id="leyendaUnidades" style="color: var(--cintac-terracota); font-weight: 800;">Contenedores requeridos: 0</span>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-cta" id="btnCotizar">Calcular Cotización</button>
+          </form>
+        </div>
+
+        <!-- PANEL DE RESULTADOS -->
+        <div class="panel" id="bloqueResultados">
+          <div class="panel-header">
+            <h2 class="panel-title">Resumen de Cotización</h2>
+            <p class="panel-desc">Valores estimados en Dólares (USD) y Pesos Chilenos (CLP).</p>
+          </div>
+
+          {% if resultado %}
+          <div class="results-deck">
+            <div class="metric-card">
+              <div class="metric-label">Costo Total Estimado (Máx.)</div>
+              <div class="metric-value">${{ resultado.costo_total }} USD</div>
+              <div class="metric-sub">≈ {{ resultado.costo_total_clp }}</div>
+            </div>
+            <div class="metric-card accent">
+              <div class="metric-label">Contenedores Requeridos</div>
+              <div class="metric-value">{{ resultado.cantidad_contenedores }} Unidad{% if resultado.cantidad_contenedores > 1 %}es{% endif %}</div>
+              <div class="metric-sub">{{ resultado.nombre_equipo }}</div>
+            </div>
+          </div>
+
+          <div class="breakdown-table">
+            <div class="breakdown-row">
+              <span class="label-col">Operación y Ruta:</span>
+              <span class="val-col">{{ resultado.tipo_operacion }}: {{ resultado.ruta_texto }}</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="label-col">Tiempo de Tránsito (Mín. – Máx.):</span>
+              <span class="val-col">{{ resultado.texto_transito }}</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="label-col">Valor Flete por Contenedor:</span>
+              <span class="val-col">{{ resultado.tarifa_unitaria_texto }}</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="label-col">Subtotal Flete Marítimo ({{ resultado.cantidad_contenedores }}x):</span>
+              <span class="val-col">{{ resultado.costo_flete_texto }}</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="label-col">Valor Declarado de la Carga:</span>
+              <span class="val-col">
+                {% if resultado.tiene_valor_carga %}
+                  ${{ resultado.valor_carga }} USD
+                {% else %}
+                  No incluido ($0.00 USD)
+                {% endif %}
+              </span>
+            </div>
+            <div class="breakdown-row">
+              <span class="label-col">Rango Total en Dólares (Mín. – Máx.):</span>
+              <span class="val-col">{{ resultado.costo_total_rango_usd }}</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="label-col">Equivalente en Pesos Chilenos (CLP):</span>
+              <span class="val-col" style="color: var(--cintac-terracota);">{{ resultado.costo_rango_clp }}</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="label-col">Tipo de Cambio Aplicado:</span>
+              <span class="val-col" style="font-size: 0.8rem; font-weight: 600;">{{ resultado.tasa_dolar }} ({{ resultado.fuente_dolar }})</span>
+            </div>
+          </div>
+
+          {% if resultado.alerta_romana_activa %}
+          <div class="alert-romana">
+            <div class="alert-romana-head">Ajuste por Normativa de Pesaje en Carretera (Romana)</div>
+            <div class="alert-romana-body">
+              Para cumplir con el límite legal chileno de <strong>{{ resultado.tope_romana }} toneladas</strong> por camión, su carga de <strong>{{ resultado.peso_ingresado }} toneladas</strong> se ha distribuido en <strong>{{ resultado.cantidad_contenedores }} unidades</strong> de {{ resultado.nombre_equipo }} (capacidad total contratada: {{ resultado.capacidad_maxima }} Ton).
+            </div>
+          </div>
+          {% else %}
+          <div class="success-alert">
+            <div class="success-alert-title">Cumplimiento Normativo Vial (Romana)</div>
+            <div class="success-alert-desc">
+              El peso de <strong>{{ resultado.peso_ingresado }} toneladas</strong> se encuentra dentro del límite legal permitido de <strong>{{ resultado.tope_romana }} toneladas</strong> para 1 {{ resultado.nombre_equipo }}.
+            </div>
+          </div>
+          {% endif %}
+
+          <button class="btn-secondary" onclick="exportarCotizacionPDF()">Descargar Informe en PDF</button>
+          {% else %}
+          <p style="color: var(--slate-500); font-size: 0.9rem;">Complete los datos del formulario izquierdo y presione "Calcular Cotización" para ver el detalle de costos en USD y CLP.</p>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA 2: ADMINISTRACIÓN Y GESTIÓN DE USUARIOS -->
+    {% if es_admin %}
+    <section id="admin-view" class="tab-view {% if tab_activa == 'admin-view' %}active{% endif %}">
+      <div class="admin-grid">
+        
+        <!-- TARJETA 1: ACTUALIZACIÓN DE PLANILLA EXCEL -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Actualización de Planilla de Tarifas</h2>
+            <p class="panel-desc">Suba el archivo Excel oficial para poner al día los puertos, tiempos de viaje y precios de fletes.</p>
+          </div>
+
+          <form method="POST" action="/cargar_matriz" enctype="multipart/form-data">
+            <input type="file" name="archivo_matriz" id="fileMatrixInput" accept=".xlsx" style="display: none;" onchange="this.form.submit()">
+            
+            <div class="dropzone-box" onclick="document.getElementById('fileMatrixInput').click()">
+              <div style="font-size: 2rem; margin-bottom: 0.4rem;">📄</div>
+              <div class="dropzone-title">Haga clic aquí para seleccionar su archivo Excel (.xlsx)</div>
+              <div class="dropzone-specs">Plantilla oficial de tarifas de Importación y Exportación CINTAC</div>
+              <button type="button" class="btn-browse">Seleccionar Archivo Excel</button>
+            </div>
+          </form>
+
+          {% if mensaje_matriz %}
+          <div class="success-alert">
+            <div class="success-alert-title">Tarifario Actualizado Correctamente</div>
+            <div class="success-alert-desc">{{ mensaje_matriz }}</div>
+          </div>
+          {% endif %}
+
+          {% if error_matriz %}
+          <div class="alert-romana">
+            <div class="alert-romana-head">No se pudo cargar el archivo (Se mantuvieron las tarifas anteriores)</div>
+            <div class="alert-romana-body">{{ error_matriz }}</div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- TARJETA 2: CREACIÓN Y ELIMINACIÓN DE USUARIOS -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Cuentas de Acceso del Equipo COMEX</h2>
+            <p class="panel-desc">Registre o elimine funcionarios asignando su perfil de trabajo dentro de la plataforma.</p>
+          </div>
+
+          <form method="POST" action="/crear_usuario">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Nombre del Funcionario</label>
+                <input type="text" name="nombre_nuevo" placeholder="Ej. Carolina Soto" required>
+              </div>
+              <div class="form-group">
+                <label>Correo Institucional</label>
+                <input type="email" name="correo_nuevo" placeholder="nombre@cintac.cl" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Contraseña de Acceso</label>
+                <input type="password" name="password_nuevo" placeholder="Mínimo 6 caracteres" minlength="6" required>
+              </div>
+              <div class="form-group">
+                <label>Perfil de Usuario</label>
+                <select name="rol_nuevo" required>
+                  <option value="empleado">Analista COMEX (Realizar Cotizaciones)</option>
+                  <option value="admin">Administrador (Actualizar Tarifas y Usuarios)</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-cta">Crear Cuenta de Usuario</button>
+          </form>
+
+          {% if mensaje_usuario %}
+          <div class="success-alert">
+            <div class="success-alert-title"> Operación Realizada</div>
+            <div class="success-alert-desc">{{ mensaje_usuario }}</div>
+          </div>
+          {% endif %}
+
+          {% if error_usuario %}
+          <div class="alert-romana">
+            <div class="alert-romana-head">Atención en Gestión de Cuentas</div>
+            <div class="alert-romana-body">{{ error_usuario }}</div>
+          </div>
+          {% endif %}
+
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Funcionario</th>
+                <th>Correo Institucional</th>
+                <th>Perfil</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in usuarios %}
+              <tr>
+                <td><strong>{{ u.nombre }}</strong></td>
+                <td>{{ u.correo }}</td>
+                <td>
+                  <span class="role-badge {% if u.rol == 'admin' %}role-admin{% else %}role-empleado{% endif %}">
+                    {{ 'Administrador' if u.rol == 'admin' else 'Analista COMEX' }}
+                  </span>
+                </td>
+                <td>
+                  {% if u.correo == correo_usuario %}
+                    <span class="protected-tag" style="color: #059669; font-weight: 700;">Sesión Actual</span>
+                  {% elif u.correo == 'admin@cintac.cl' %}
+                    <span class="protected-tag">Admin por Defecto</span>
+                  {% else %}
+                    <form method="POST" action="/eliminar_usuario/{{ u.id_usuario }}" style="display:inline;" onsubmit="return confirm('¿Está seguro de que desea eliminar la cuenta de {{ u.correo }}?');">
+                      <button type="submit" class="btn-delete-user">Eliminar</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+    {% endif %}
+  </main>
+
+  <script>
+    window.addEventListener('pageshow', function(event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    });
+
+    const catalogoRutas = {{ rutas | default([]) | tojson }};
+    const origenPost = "{{ request.form.get('puertoOrigen', '') }}";
+    const destinoPost = "{{ request.form.get('puertoDestino', '') }}";
+
+    function cambiarPestana(idVista, btn) {
+      document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('header .tab-pill').forEach(b => b.classList.remove('active'));
+      const target = document.getElementById(idVista);
+      if (target) target.classList.add('active');
+      if (btn) btn.classList.add('active');
+    }
+
+    function exportarCotizacionPDF() {
+      const element = document.getElementById('bloqueResultados');
+      const opt = {
+        margin: 10,
+        filename: 'Cotizacion_Maritima_CINTAC.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+
+    function setOperacion(tipo) {
+      document.getElementById('tipoOperacion').value = tipo;
+      document.getElementById('btn-importacion').classList.toggle('active', tipo === 'Importación');
+      document.getElementById('btn-exportacion').classList.toggle('active', tipo === 'Exportación');
+      actualizarPuertos(true);
+    }
+
+    function poblarSelect(selectElem, listaOpciones, valorSeleccionado, placeholderTexto) {
+      selectElem.innerHTML = '';
+      if (placeholderTexto) {
+        const optDef = document.createElement('option');
+        optDef.value = '';
+        optDef.textContent = placeholderTexto;
+        optDef.disabled = true;
+        if (!valorSeleccionado || !listaOpciones.includes(valorSeleccionado)) {
+          optDef.selected = true;
+        }
+        selectElem.appendChild(optDef);
+      }
+
+      listaOpciones.forEach(etiqueta => {
+        const opt = document.createElement('option');
+        opt.value = etiqueta;
+        opt.textContent = etiqueta;
+        if (etiqueta === valorSeleccionado) {
+          opt.selected = true;
+        }
+        selectElem.appendChild(opt);
+      });
+    }
+
+    // Filtra dinámicamente los destinos disponibles según el Puerto de Origen elegido
+    function actualizarDestinosSegunOrigen(usarPost = false) {
+      const tipo = document.getElementById('tipoOperacion').value;
+      const selectOrigen = document.getElementById('puertoOrigen');
+      const selectDestino = document.getElementById('puertoDestino');
+      const origenActual = selectOrigen.value;
+
+      const rutasModalidad = catalogoRutas.filter(r => r.tipo_operacion === tipo);
+      let rutasFiltradas = rutasModalidad;
+
+      if (origenActual) {
+        rutasFiltradas = rutasModalidad.filter(
+          r => `${r.puerto_origen} (${r.pais_origen})` === origenActual
+        );
+      }
+
+      const destinosValidos = [...new Set(rutasFiltradas.map(r => `${r.puerto_destino} (${r.pais_destino})`))];
+      const destinoPreferido = (usarPost && destinoPost && destinosValidos.includes(destinoPost))
+        ? destinoPost
+        : (destinosValidos[0] || '');
+
+      poblarSelect(
+        selectDestino,
+        destinosValidos,
+        destinoPreferido,
+        destinosValidos.length === 0 ? 'Seleccione primero un origen...' : null
+      );
+    }
+
+    function actualizarPuertos(forzarDefault = false) {
+      const tipo = document.getElementById('tipoOperacion').value;
+      const selectOrigen = document.getElementById('puertoOrigen');
+
+      const rutasModalidad = catalogoRutas.filter(r => r.tipo_operacion === tipo);
+      const origenesUnicos = [...new Set(rutasModalidad.map(r => `${r.puerto_origen} (${r.pais_origen})`))];
+
+      if (tipo === 'Importación') {
+        const origSel = (!forzarDefault && origenPost && origenesUnicos.includes(origenPost)) ? origenPost : '';
+        poblarSelect(selectOrigen, origenesUnicos, origSel, 'Seleccione puerto de origen...');
+      } else {
+        const origSel = (!forzarDefault && origenPost && origenesUnicos.includes(origenPost))
+          ? origenPost
+          : (origenesUnicos[0] || '');
+        poblarSelect(selectOrigen, origenesUnicos, origSel, null);
+      }
+
+      actualizarDestinosSegunOrigen(!forzarDefault);
+    }
+
+    function actualizarIndicadorRomana() {
+      const valPeso = parseFloat(document.getElementById('pesoCarga').value) || 0;
+      const unidad = document.getElementById('unidadPeso').value;
+      const equipo = document.getElementById('tipoEquipo').value;
+
+      const pesoTon = unidad === 'KG' ? valPeso / 1000.0 : valPeso;
+      const topeUnitario = equipo === '20 HC' ? 23.0 : 25.0;
+      const etiqEquipo = equipo === '20 HC' ? "20' HC" : "40' HC";
+
+      document.getElementById('badgeTope').textContent = `Capacidad Legal ${etiqEquipo}: ${topeUnitario} Ton / Contenedor`;
+
+      const fillBar = document.getElementById('cargoFillBar');
+      const leyendaPeso = document.getElementById('leyendaPeso');
+      const leyendaUnidades = document.getElementById('leyendaUnidades');
+
+      if (pesoTon <= 0) {
+        fillBar.style.width = '0%';
+        leyendaPeso.textContent = 'Peso ingresado: 0.00 Ton';
+        leyendaUnidades.textContent = 'Contenedores requeridos: 0';
+        return;
+      }
+
+      const unidades = Math.ceil(pesoTon / topeUnitario);
+      const capacidadContratada = unidades * topeUnitario;
+      const ocupacionPct = Math.min(100, Math.round((pesoTon / capacidadContratada) * 100));
+
+      fillBar.style.width = ocupacionPct + '%';
+      leyendaPeso.textContent = `Peso ingresado: ${pesoTon.toFixed(2)} Ton (Ocupación: ${ocupacionPct}%)`;
+      leyendaUnidades.textContent = `Se requieren: ${unidades} unidad(es) de ${etiqEquipo} (Cap. ${capacidadContratada}t)`;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      actualizarPuertos(false);
+      actualizarIndicadorRomana();
+    });
+  </script>
+</body>
+</html>
