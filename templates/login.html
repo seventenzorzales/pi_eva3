@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Acceso Corporativo - CINTAC COMEX</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cintac-terracota: #A8381D;
+      --cintac-orange: #E65A1E;
+      --slate-900: #0F172A;
+      --slate-700: #334155;
+      --slate-500: #64748B;
+      --slate-200: #E2E8F0;
+      --slate-100: #F1F5F9;
+    }
+    * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body {
+      background-color: var(--slate-100);
+      display: flex; justify-content: center; align-items: center;
+      height: 100vh; margin: 0;
+    }
+    .login-box {
+      background: #FFFFFF; padding: 2.5rem 2.2rem; border-radius: 10px;
+      border: 1px solid var(--slate-200);
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+      width: 100%; max-width: 390px; text-align: center;
+    }
+    .brand-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--cintac-terracota), var(--cintac-orange));
+      color: #FFFFFF; font-weight: 800; font-size: 1.3rem;
+      padding: 0.45rem 1.1rem; border-radius: 6px; margin-bottom: 1rem;
+    }
+    .login-box h2 { color: var(--slate-900); margin: 0 0 0.35rem 0; font-size: 1.3rem; font-weight: 800; }
+    .login-sub { color: var(--slate-500); font-size: 0.82rem; margin-bottom: 1.5rem; font-weight: 500; }
+    .login-box input {
+      width: 100%; height: 46px; padding: 0 0.95rem; margin: 0.5rem 0;
+      border: 1.5px solid var(--slate-200); border-radius: 6px; font-size: 0.92rem;
+    }
+    .login-btn {
+      width: 100%; height: 48px;
+      background: linear-gradient(135deg, var(--cintac-terracota), var(--cintac-orange));
+      color: white; border: none; font-weight: 800; text-transform: uppercase;
+      border-radius: 6px; cursor: pointer; margin-top: 0.9rem; font-size: 0.9rem;
+    }
+    .error-msg {
+      color: #991B1B; background-color: #FEF2F2; padding: 0.75rem;
+      border: 1px solid #FECACA; border-radius: 6px; margin-bottom: 1rem;
+      font-size: 0.84rem; font-weight: 600;
+    }
+    .back-link {
+      display: block; margin-top: 1.4rem; color: var(--slate-500);
+      text-decoration: none; font-size: 0.84rem; font-weight: 600;
+    }
+    .back-link:hover { color: var(--cintac-terracota); text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div class="login-box">
+    <div class="brand-badge">CINTAC</div>
+    <h2>Portal Operadores COMEX</h2>
+    <p class="login-sub">Autenticación Corporativa Basada en Roles (RBAC)</p>
+    
+    {% if error %}
+    <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/login" autocomplete="off">
+      <input type="email" name="correo" placeholder="Correo Corporativo (ej. admin@cintac.cl)" required>
+      <input type="password" name="password" placeholder="Contraseña" required>
+      <button type="submit" class="login-btn">Iniciar Sesión</button>
+    </form>
+    
+    <a href="/" class="back-link">← Ir al Cotizador de Demostración</a>
+  </div>
+
+  <script>
+    window.addEventListener('pageshow', function(event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    });
+  </script>
+</body>
+</html>
